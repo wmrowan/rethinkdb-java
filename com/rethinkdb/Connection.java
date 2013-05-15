@@ -47,7 +47,7 @@ public class Connection {
         default_db = db;
     }
 
-    public Datum send(Ql2.Query query) throws Exception {
+    public <T> T send(Ql2.Query query) throws Exception {
         byte[] serialized = query.toByteArray();
 
         // First write the length of the serialized message
@@ -78,7 +78,7 @@ public class Connection {
         Ql2.Response response = Ql2.Response.parseFrom(responseBuf);
         switch (response.getType()) {
         case SUCCESS_ATOM:
-            return Datum.wrap(response.getResponseList().get(0));
+            return Datum.unwrapProto(response.getResponseList().get(0));
         default:
             throw new Exception("unexpected return type");
         }

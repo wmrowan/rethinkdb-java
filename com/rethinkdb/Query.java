@@ -1,9 +1,11 @@
 package com.rethinkdb;
 
+import java.util.List;
+
 public abstract class Query {
     public Query() { }
 
-    public Datum run(Connection conn) throws Exception {
+    public <T> T run(Connection conn) throws Exception {
         Ql2.Query query = Ql2.Query.newBuilder()
             .setType(Ql2.Query.QueryType.START)
             .setToken(1)
@@ -14,11 +16,7 @@ public abstract class Query {
 
     protected abstract Ql2.Term build();
 
-    public static Query expr(double num) {
-       return new NumDatum(num);
-    }
-
-    public static Query expr(String str) {
-        return new StrDatum(str);
+    public static <T> Query expr(T value) throws Exception {
+        return Datum.wrap(value);
     }
 }
