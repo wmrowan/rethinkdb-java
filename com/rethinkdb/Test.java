@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
 
 public class Test {
 
@@ -11,15 +13,13 @@ public class Test {
 	public static void main(String[] args) throws Exception {
         Connection c = new Connection();
 
-        Map<String, String> map = new HashMap<String, String>();
-        map.put("a", "b");
-        map.put("c", "d");
+        String table = "usertable";
+        String key = "a";
+        Set<String> fields = null;//new HashSet<String>();
+        //fields.add("b");
+        Term t = Term.table(table).get(key).pluck(fields);
+        Map<String, String> out = t.run(c);
 
-        Query q = Query.expr(map);
-        Map<String, String> out = q.run(c);
-
-        //Query q = Query.expr("abc");
-        //String out = q.run(c);
         System.out.println(out);
 	}
 

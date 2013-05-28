@@ -5,10 +5,17 @@ import java.io.OutputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Connection {
+    private static final AtomicInteger nextToken = new AtomicInteger();
     private static final String DEFAULT_HOST = "localhost";
     private static final int DEFAULT_PORT = 28015;
+
+    private String default_db;
+    private Socket socket;
+    private OutputStream out;
+    private InputStream in;
 
     public Connection(String host, int port) throws Exception {
         this(host, port, null);
@@ -47,7 +54,42 @@ public class Connection {
         default_db = db;
     }
 
-    public <T> T send(Ql2.Query query) throws Exception {
+    public void close() throws Exception {
+        this.socket.close();
+    }
+
+    public <T> T run(Term term) throws Exception {
+        Ql2.Query query = Ql2.Query.newBuilder()
+            .setType(Ql2.Query.QueryType.START)
+            .setToken(nextToken.incrementAndGet())
+            .setQuery(term.build()).build();
+        send_query(query);
+        return get_response();
+    }
+
+    public void run_noreply(Term term) throws Exception {
+        Ql2.Query query = Ql2.Query.newBuilder()
+            .setType(Ql2.Query.QueryType.START)
+            .setToken(nextToken.incrementAndGet())
+            .setQuery(term.build())
+            .addGlobalOptargs(
+                Ql2.Query.AssocPair.newBuilder()
+                    .setKey("noreply")
+                    .setVal(Datum.wrap(true).build())
+                    .build()
+            ).build();
+        send_query(query);
+    }
+
+    private void send_query(Ql2.Query query) throws Exception {
+        if (default_db != null) {
+            query = query.toBuilder().addGlobalOptargs(
+                        Ql2.Query.AssocPair.newBuilder()
+                            .setKey("db")
+                            .setVal(Term.db(default_db).build())
+                    ).build();
+        }
+
         byte[] serialized = query.toByteArray();
 
         // First write the length of the serialized message
@@ -57,8 +99,9 @@ public class Connection {
         out.write(bb.array());
 
         out.write(serialized);
+    }
 
-        // Wait for response
+    private <T> T get_response() throws Exception {
         byte[] responseLengthBuf = new byte[4];
         int bytesLeft = 4;
         do {
@@ -79,13 +122,16 @@ public class Connection {
         switch (response.getType()) {
         case SUCCESS_ATOM:
             return Datum.unwrapProto(response.getResponseList().get(0));
+        case SUCCESS_PARTIAL:
+            return (T)"a";
+        case SUCCESS_SEQUENCE:
+            return Datum.ArrayDatum.unwrapProto(response.getResponseList());
+        case CLIENT_ERROR:
+        case COMPILE_ERROR:
+        case RUNTIME_ERROR:
+            throw new Exception(response.getResponseList().get(0).getRStr());
         default:
             throw new Exception("unexpected return type");
         }
     }
-
-    private String default_db;
-    private Socket socket;
-    private OutputStream out;
-    private InputStream in;
 }

@@ -1,4 +1,4 @@
-CLASSPATH=-classpath .:/usr/share/java/protobuf-java.jar
+CLASSPATH=-classpath .:/usr/share/java/protobuf-java-2.4.1.jar
 
 PACKAGE=com/rethinkdb
 JAVAFILES=$(wildcard $(PACKAGE)/*.java)
@@ -10,7 +10,7 @@ test: $(CLASSFILES) $(PB_GEN)
 	java $(CLASSPATH) com.rethinkdb.Test
 
 $(PACKAGE)/%.class: $(PACKAGE)/%.java
-	javac $(CLASSPATH) $<
+	javac -g $(CLASSPATH) $<
 
 $(PB_GEN): ql2.proto
 	protoc --java_out=. ql2.proto

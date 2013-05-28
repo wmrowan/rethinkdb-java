@@ -5,19 +5,21 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 
-abstract class Datum extends Query {
+abstract class Datum extends Term {
 
     @SuppressWarnings("unchecked")
     protected abstract <T, S> T unwrap() throws Exception;
 
     @SuppressWarnings("unchecked")
     protected static <T> Datum wrap(T value) throws Exception {
-        if (value instanceof Datum) {
-            return (Datum)value;
+        if (value == null) {
+            return new NullDatum();
         } else if (value instanceof Boolean) {
             return new BoolDatum((Boolean)value);
         } else if (value instanceof Double) {
             return new NumDatum((Double)value);
+        } else if (value instanceof Integer) {
+            return new NumDatum((Double)(((Integer)value) * 1.0));
         } else if (value instanceof String) {
             return new StrDatum((String)value);
         } else if (value instanceof List) {
@@ -46,6 +48,22 @@ abstract class Datum extends Query {
             return ObjectDatum.unwrapProto(datum.getRObjectList());
         default:
             throw new Exception("unexpected datum type");
+        }
+    }
+
+    static class NullDatum extends Datum {
+        @SuppressWarnings("unchecked")
+        public <T, S> T unwrap() throws Exception {
+            return null;
+        }
+
+        protected Ql2.Term build() {
+            return Ql2.Term.newBuilder()
+                .setType(Ql2.Term.TermType.DATUM)
+                .setDatum(
+                    Ql2.Datum.newBuilder()
+                        .setType(Ql2.Datum.DatumType.R_NULL)
+                ).build();
         }
     }
 
