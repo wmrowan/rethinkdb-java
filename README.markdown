@@ -1,1 +1,1 @@
-This is a Java driver for RethinkDB
+This is a (currenlty very limited) Java driver for RethinkDB. This implements the bare minium of support to send a limited subset of RQL commands to a RethinkDB server. Later perhaps this will be expanded to a production ready Java driver but for now it's intended for testing only.
