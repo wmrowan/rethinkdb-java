@@ -8,7 +8,7 @@ import java.nio.ByteOrder;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Connection {
-    private static final AtomicInteger nextToken = new AtomicInteger();
+    private AtomicInteger nextToken = new AtomicInteger();
     private static final String DEFAULT_HOST = "localhost";
     private static final int DEFAULT_PORT = 28015;
 
@@ -37,6 +37,7 @@ public class Connection {
         use(db);
 
         socket = new java.net.Socket(host, port);
+        socket.setTcpNoDelay(true);
         out = socket.getOutputStream();
         in = socket.getInputStream();
 
@@ -92,13 +93,12 @@ public class Connection {
 
         byte[] serialized = query.toByteArray();
 
-        // First write the length of the serialized message
-        ByteBuffer bb = ByteBuffer.allocate(4);
+        // Prefix the serialized message by its length
+        ByteBuffer bb = ByteBuffer.allocate(4 + serialized.length);
         bb.order(ByteOrder.LITTLE_ENDIAN);
         bb.putInt(serialized.length);
+        bb.put(serialized);
         out.write(bb.array());
-
-        out.write(serialized);
     }
 
     private <T> T get_response() throws Exception {
