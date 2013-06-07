@@ -6,8 +6,8 @@ CLASSFILES=$(patsubst $(PACKAGE)/%.java,$(PACKAGE)/%.class,$(JAVAFILES))
 PB_GEN=./$(PACKAGE)/Ql2.java
 JAR=rethinkdb.jar
 
-test: $(CLASSFILES) $(PB_GEN)
-	java $(CLASSPATH) com.rethinkdb.Test
+$(JAR): $(CLASSFILES) $(PB_GEN)
+	jar cf $(JAR) $(foreach FILE,$(wildcard $(PACKAGE)/*.class),'$(FILE)')
 
 $(PACKAGE)/%.class: $(PACKAGE)/%.java
 	javac -g $(CLASSPATH) $<
@@ -15,8 +15,8 @@ $(PACKAGE)/%.class: $(PACKAGE)/%.java
 $(PB_GEN): ql2.proto
 	protoc --java_out=. ql2.proto
 
-$(JAR): $(CLASSFILES) $(PB_GEN)
-	jar cf $(JAR) $(foreach FILE,$(wildcard $(PACKAGE)/*.class),'$(FILE)')
+test: $(CLASSFILES) $(PB_GEN)
+	java $(CLASSPATH) com.rethinkdb.Test
 
 clean:
 	rm -f $(PACKAGE)/*.class
